@@ -2,13 +2,7 @@ import os
 from dotenv import load_dotenv
 from livekit import agents
 from livekit.agents import AgentSession, Agent, RoomInputOptions
-from livekit.plugins import openai, deepgram, noise_cancellation, silero
-# Try to import groq, but make it optional
-try:
-    from livekit.plugins import groq
-except ImportError:
-    groq = None
-from livekit.plugins import google
+from livekit.plugins import openai, deepgram, noise_cancellation, silero, groq, google
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 load_dotenv()
@@ -40,17 +34,15 @@ def get_stt():
             base_url=os.getenv("STT_BASE_URL"),
         )
     elif provider == "groq":
-        if groq is None:
-            raise ImportError("The 'groq' plugin is not available in this environment. Please ensure your livekit package includes groq support.")
         language = os.getenv("STT_LANGUAGE")
-        if not language or language == "multi":
-            language = "en"
-        return groq.STT(
-            model=os.getenv("STT_MODEL", "whisper-large-v3-turbo"),
-            language=language,
-            api_key=os.getenv("STT_API_KEY"),
-            base_url=os.getenv("STT_BASE_URL", "https://api.groq.com/openai/v1"),
-        )
+        kwargs = {
+            "model": os.getenv("STT_MODEL", "whisper-large-v3-turbo"),
+            "api_key": os.getenv("STT_API_KEY"),
+            "base_url": os.getenv("STT_BASE_URL", "https://api.groq.com/openai/v1"),
+        }
+        if language and language != "multi":
+            kwargs["language"] = language
+        return groq.STT(**kwargs)
     # Add more providers as needed
     raise NotImplementedError(f"STT provider {provider} not supported.")
 
